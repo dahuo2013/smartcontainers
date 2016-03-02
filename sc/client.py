@@ -40,11 +40,6 @@ class scClient(docker.Client):
         self.provfilename = "SCProv.jsonld"
         self.label_prefix = "smartcontainer"
 
-
-    def info(self):
-        print "Now we can have an awesome smart cake"
-        super(scClient, self).info()
-
     def commit(self, container, repository=None, tag=None, message=None,
                author=None, conf=None):
         #Extends the docker-py commit command to include smartcontainer functions
