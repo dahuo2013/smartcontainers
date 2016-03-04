@@ -16,10 +16,10 @@ def test_simple_tar():
 
 def test_hasProv():
     myClient = client.scClient()
-    newContainer = myClient.dcli.create_container(image='phusion/append') #, command="/bin/echo")
-    ContainerID = newContainer['Id']
+    newContainer = myClient.dcli.create_container(image='phusion/append', command="/bin/bash", tty=True)
+    ContainerID = str(newContainer['Id'])
     myClient.dcli.start(ContainerID)
-    #assert myClient.hasProv(ContainerID, 'SCProv.jsonld','/SmartContainer/')
+    assert myClient.hasProv(ContainerID, 'SCProv.jsonld', '/SmartContainer/')
     time.sleep(1)
     myClient.dcli.stop(ContainerID)
     myClient.dcli.remove_container(ContainerID)
