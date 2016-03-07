@@ -22,7 +22,7 @@ def createClient():
         isSocket = stat.S_ISSOCK(mode)
     if isSocket:
         docker_socket_file ="unix://"+path
-        myclient = client.scClient(base_url=docker_socket_file)
+        myclient = client.scClient(base_url=docker_socket_file, version="auto")
         return myclient
     elif (docker_host and docker_cert_path and docker_machine_name):
         tls_config = tls.TLSConfig(
@@ -33,7 +33,8 @@ def createClient():
             assert_hostname = False
         )
         docker_host_https = docker_host.replace("tcp","https")
-        myclient = client.scClient(base_url=docker_host_https, tls=tls_config)
+        myclient = client.scClient(base_url=docker_host_https, tls=tls_config,
+                                   version="auto")
         return myclient
 # If we fall through, myclient is set to none and we should fail.
     return myclient

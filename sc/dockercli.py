@@ -109,10 +109,12 @@ class DockerCli:
             )
         # # Replace tcp: with https: in docker host.
             docker_host_https = self.docker_host.replace("tcp","https")
-            self.dcli = client.scClient(base_url=docker_host_https, tls=tls_config)
+            self.dcli = client.scClient(base_url=docker_host_https,
+                                        tls=tls_config, version="auto")
         # #print self.dcli.info()
         elif (self.docker_socket_file):
-            self.dcli = client.scClient(base_url=self.docker_socket_file)
+            self.dcli = client.scClient(base_url=self.docker_socket_file,
+                                        version="auto")
         # TODO: test for dcli to make sure it can talk to client.
 
     def sanity_check(self):
