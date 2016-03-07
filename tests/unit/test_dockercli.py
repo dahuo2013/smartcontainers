@@ -3,6 +3,9 @@ import os
 from sys import platform as _platform
 
 # Test code that discovers docker command
+# This is a bad hack right now
+# The correct way should be monkeypatch fixtures
+# http://holgerkrekel.net/2009/03/03/monkeypatching-in-unit-tests-done-right/
 def test_find_docker():
     from sc import dockercli
     oldenv = os.environ.copy()

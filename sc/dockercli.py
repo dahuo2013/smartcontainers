@@ -185,7 +185,6 @@ class DockerCli:
             self.find_docker()
         cmd_string = str(self.location) + ' ' + self.command
         capture_flag = False
-        print cmd_string
 
         for name in snarf_docker_commands:
             if name in self.command:
@@ -210,8 +209,8 @@ class DockerCli:
 
     def capture_cmd_build(self,cmd_string):
         output = capture_stdout(cmd_string)
-        print output.stdout
-        print 'build'
+        #print output.stdout
+        #print 'build'
         #pass
 
     def capture_cmd_commit(self,cmd_string):
