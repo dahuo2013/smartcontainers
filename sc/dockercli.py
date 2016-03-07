@@ -11,13 +11,15 @@ to be processed for provenance.
 from __future__ import unicode_literals
 from util import which
 import io
-import os
-import re
-import subprocess
 import json
+import os
+import os.path
+import re
+import stat
+import subprocess
 
-from sarge import Command, Capture, get_stdout, get_stderr, capture_stdout
 import docker.tls as tls
+from sarge import Command, Capture, get_stdout, get_stderr, capture_stdout
 
 import client
 import provinator
@@ -135,10 +137,13 @@ class DockerCli:
         self.docker_machine_name = os.getenv("DOCKER_MACHINE_NAME")
 
         # Look for linux docker socket file
-        has_docker_socket_file = os.path.isfile("/var/run/docker.sock") 
+        socket_path = "/var/run/docker.socket"
+        has_docker_socket_file = os.path.exists(socket_path) 
         if has_docker_socket_file:
-            self.docker_socket_file = "/var/run/docker.sock"
-        
+            mode = os.stat(socket_path).st_mode
+            isSocket = stat.S_ISSOCK(mode)
+            if isSocket: 
+                self.docker_socket_file = "unix://"+socket_path
         # Sanity check docker environment to see that we either have
         # docker machine env vars or a running docker server with
         # a socket file. 
