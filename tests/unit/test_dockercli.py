@@ -5,6 +5,8 @@ from sys import platform as _platform
 # Test code that discovers docker command
 def test_find_docker():
     from sc import dockercli
+    oldenv = os.environ.copy()
+    # Test location first
     oldpath = os.environ["PATH"]
     with pytest.raises(dockercli.DockerNotFoundError):
         dockertester = dockercli.DockerCli('help')
@@ -12,6 +14,17 @@ def test_find_docker():
         os.environ["PATH"] = "NULL"
         location = dockertester.find_docker()
     os.environ["PATH"] = oldpath
+    # Test environment variables on MacOS
+    if _platform == "darwin":
+        docker_host = os.environ["DOCKER_HOST"]
+        with pytest.raises(dockercli.DockerNotFoundError):
+            os.environ.clear()
+            dockertester.find_docker()
+        os.environ.update(oldenv)
+        dockertester.check_docker_connection()
+    if _platform == "linux":
+        dockertester.find_docker()
+
     location = dockertester.find_docker()
     assert location is not None
 
