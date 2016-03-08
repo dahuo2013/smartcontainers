@@ -1,18 +1,28 @@
+# -*- coding: utf-8 -*-
+"""Docker Command Line Interface Module.
+
+This module provides the interface to the docker command line utility. Commands
+that need to be processed by smartcontainers are intercepted and sent to
+docker-py client API for processing. All other commands are sent to the docker
+command line client. This is a cheat to avoid having to reimpliment the entire
+docker command line arguments even though only a subset of these commands need
+to be processed for provenance.
+"""
+from __future__ import unicode_literals
 from util import which
-from sarge import Command, Capture, get_stdout, get_stderr, capture_stdout
-from io import TextIOWrapper
-import re
+import io
 import json
-import subprocess
-import time
-import datetime
-import socket
 import os
-import random
-import provinator
+import os.path
+import re
+import stat
+import subprocess
+
 import docker.tls as tls
-import docker
+from sarge import Command, Capture, get_stdout, get_stderr, capture_stdout
+
 import client
+import provinator
 import scMetadata
 
 # We need to docker version greater than 1.6.0 to support
@@ -26,7 +36,9 @@ smart_container_key = 'sc'
 
 
 class Error(Exception):
-    """Base class for docker module exceptions"""
+    
+    """Base class for docker module exceptions."""
+    
     pass
 
 
@@ -67,10 +79,11 @@ class DockerInputError(RuntimeError):
         self.arg = msg
 
 class DockerCli:
+    """Docker Command Line interface class"""
     def __init__(self, command):
         self.command = command
         self.label_prefix = "smartcontainer"
-        self.location = self.find_docker()
+        self.location = None
         self.imageID = None
         self.container = None
         self.metadata = {}
@@ -78,26 +91,31 @@ class DockerCli:
         self.provfilepath = "/SmartContainer/"
         self.provfilename = "SCProv.jsonld"
         self.scmd = scMetadata.scMetadata()
+        self.docker_host = None
+        self.docker_cert_path = None
+        self.docker_machine_name = None
+        self.docker_socket_file = None
 
-        # # Test configuration for docker-machine. We need a way
-        # # to set the sockets file if on linux.
-        # # Get command line arguments for DOCKER HOST
-        # docker_host = os.environ["DOCKER_HOST"]
-        # docker_cert_path = os.environ["DOCKER_CERT_PATH"]
-        # docker_machine_name = os.environ["DOCKER_MACHINE_NAME"]
-        #
-        # # Build tls information
-        #
-        # tls_config = tls.TLSConfig(
-        #     client_cert=(os.path.join(docker_cert_path, 'cert.pem'), os.path.join(docker_cert_path,'key.pem')),
-        #     ca_cert=os.path.join(docker_cert_path, 'ca.pem'),
-        #     verify=True,
-        #     assert_hostname = False
-        # )
+        # Find docker configuration.
+        self.find_docker()
+
+        if (self.docker_host and self.docker_machine_name and self.docker_cert_path):
+            tls_config = tls.TLSConfig(
+                client_cert=(os.path.join(self.docker_cert_path, 'cert.pem'),
+                             os.path.join(self.docker_cert_path,'key.pem')),
+                ca_cert=os.path.join(self.docker_cert_path, 'ca.pem'),
+                verify=True,
+                assert_hostname = False
+            )
         # # Replace tcp: with https: in docker host.
-        # docker_host_https = docker_host.replace("tcp","https")
-        # self.dcli = client.scClient(base_url=docker_host_https, tls=tls_config)
+            docker_host_https = self.docker_host.replace("tcp","https")
+            self.dcli = client.scClient(base_url=docker_host_https,
+                                        tls=tls_config, version="auto")
         # #print self.dcli.info()
+        elif (self.docker_socket_file):
+            self.dcli = client.scClient(base_url=self.docker_socket_file,
+                                        version="auto")
+        # TODO: test for dcli to make sure it can talk to client.
 
     def sanity_check(self):
         """sanity_check checks existence and executability of docker."""
@@ -108,11 +126,37 @@ class DockerCli:
 
     def find_docker(self):
         """find_docker searches paths and common directores to find docker."""
+
+        # Find docker command line location
         location = which("docker")
         if location is None:
             raise DockerNotFoundError("Please make sure docker is installed "
                                       "and in your path")
-        return location
+        
+        # Find docker-machine environment variables
+        self.docker_host = os.getenv("DOCKER_HOST")
+        self.docker_cert_path = os.getenv("DOCKER_CERT_PATH")
+        self.docker_machine_name = os.getenv("DOCKER_MACHINE_NAME")
+
+        # Look for linux docker socket file
+        socket_path = "/var/run/docker.socket"
+        has_docker_socket_file = os.path.exists(socket_path) 
+        if has_docker_socket_file:
+            mode = os.stat(socket_path).st_mode
+            isSocket = stat.S_ISSOCK(mode)
+            if isSocket: 
+                self.docker_socket_file = "unix://"+socket_path
+        # Sanity check docker environment to see that we either have
+        # docker machine env vars or a running docker server with
+        # a socket file. 
+        if not ((self.docker_host and self.docker_machine_name and
+                self.docker_cert_path) or not (has_docker_socket_file)):
+            raise DockerNotFoundError("Make docker server is started or env"
+                                      "variables for docker-machine are set.")
+
+        self.location = location
+        return self.location
+
 
     def check_docker_version(self, min_version=min_docker_version):
         """check_docker_version makes sure docker is of a min version"""
@@ -148,7 +192,6 @@ class DockerCli:
             self.find_docker()
         cmd_string = str(self.location) + ' ' + self.command
         capture_flag = False
-        print cmd_string
 
         for name in snarf_docker_commands:
             if name in self.command:
@@ -173,8 +216,8 @@ class DockerCli:
 
     def capture_cmd_build(self,cmd_string):
         output = capture_stdout(cmd_string)
-        print output.stdout
-        print 'build'
+        #print output.stdout
+        #print 'build'
         #pass
 
     def capture_cmd_commit(self,cmd_string):
@@ -360,7 +403,7 @@ class DockerCli:
         imageID = None
         docker_command = str(self.location) + ' images'
         output = capture_stdout(docker_command)
-        for line in TextIOWrapper(output.stdout):
+        for line in io.TextIOWrapper(output.stdout):
             if image in repr(line):
                 imageID = line.split()[2]
         if imageID is None:
@@ -372,7 +415,7 @@ class DockerCli:
         docker_command = str(self.location) + ' ps -a'
         #print docker_command
         output = capture_stdout(docker_command)
-        for line in TextIOWrapper(output.stdout):
+        for line in io.TextIOWrapper(output.stdout):
             if image in repr(line):
                 containerID = line.split()[0]
         if containerID is None:
@@ -384,7 +427,7 @@ class DockerCli:
         docker_command = str(self.location) + ' ps -a'
         #print docker_command
         output = capture_stdout(docker_command)
-        for line in TextIOWrapper(output.stdout):
+        for line in io.TextIOWrapper(output.stdout):
             if containerID in repr(line):
                 imageName = line.split()[1]
         if imageName is None:
@@ -395,7 +438,7 @@ class DockerCli:
         docker_version = None
         docker_command = str(self.location) + " version --format '{{.Server.Version}}'"
         output = capture_stdout(docker_command)
-        for line in TextIOWrapper(output.stdout):
+        for line in io.TextIOWrapper(output.stdout):
             docker_version = line
         return docker_version
 
@@ -403,7 +446,7 @@ class DockerCli:
         docker_command = str(self.location) + ' images'
         output = capture_stdout(docker_command)
         if self.imageID is not None:
-            for line in TextIOWrapper(output.stdout):
+            for line in io.TextIOWrapper(output.stdout):
                 if self.imageID in repr(line):
                     repository = line.split()[0]
                     tag = line.split()[1]
