@@ -71,13 +71,13 @@ def test_do_command_run():
 
 # Tests function that returns the current image id for
 # "phusion/baseimage"
-def test_get_imageID():
+def test_get_imageID(pull_docker_image):
     from sc import dockercli
     dockertester = dockercli.DockerCli('images')
     imageID = dockertester.get_imageID("phusion/baseimage")
     # assert imageID == "e9f50c1887ea"
 
-def test_put_label_image():
+def test_put_label_image(pull_docker_image):
     from sc import dockercli
     dockertester = dockercli.DockerCli('images')
     imageID = dockertester.get_imageID("phusion/baseimage")
@@ -85,14 +85,14 @@ def test_put_label_image():
     label = '{"Description":"A containerized foobar","Usage":"docker run --rm example/foobar [args]","License":"GPL","Version":"0.0.1-beta","aBoolean":true,"aNumber":0.01234,"aNestedArray":["a","b","c"]}'
     dockertester.put_label_image(label)
 
-def test_docker_get_metadata():
+def test_docker_get_metadata(pull_docker_image):
     from sc import dockercli
     dockertester = dockercli.DockerCli('images')
     imageID = dockertester.get_imageID("phusion/baseimage")
     dockertester.set_image(imageID)
     label = dockertester.get_metadata()
 
-def test_docker_get_label():
+def test_docker_get_label(pull_docker_image):
     from sc import dockercli
     dockertester = dockercli.DockerCli('images')
     imageID = dockertester.get_imageID("phusion/baseimage")
