@@ -53,7 +53,7 @@ def test_simple_tar(createClient):
     thisfile = createClient.simple_tar('tempprov.txt')
     assert tarfile.is_tarfile(thisfile.name)
 
-def test_hasProv(createClient):
+def test_hasProv(createClient, pull_docker_image):
     # myClient = client.scClient()
     newContainer = createClient.create_container(image='phusion/baseimage', command="/bin/bash", tty=True)
     ContainerID = str(newContainer['Id'])
