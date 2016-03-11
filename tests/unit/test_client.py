@@ -30,6 +30,7 @@ def test_fileCopyIn(createClient, pull_docker_image):
     createClient.remove_container(ContainerID)
     os.remove('SCProv.jsonld')
 
+
 def test_fileCopyOut(createClient, pull_docker_image):
     newContainer = createClient.create_container(image=pull_docker_image, command="/bin/sh", tty=True)
     ContainerID = str(newContainer['Id'])
