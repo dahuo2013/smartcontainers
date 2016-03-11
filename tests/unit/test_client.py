@@ -17,7 +17,7 @@ def test_simple_tar(createClient):
 
 def test_hasProv(createClient, pull_docker_image):
     # myClient = client.scClient()
-    newContainer = createClient.create_container(image='phusion/baseimage', command="/bin/bash", tty=True)
+    newContainer = createClient.create_container(image=pull_docker_image, command="/bin/sh", tty=True)
     ContainerID = str(newContainer['Id'])
     createClient.start(ContainerID)
     #assert createClient.hasProv(ContainerID, 'SCProv.jsonld', '/SmartContainer/')
