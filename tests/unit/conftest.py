@@ -40,7 +40,7 @@ def createClient():
 
 @pytest.fixture(scope="session")
 def pull_docker_image(request, createClient):
-    image_name = "phusion/baseimage"
+    image_name = "alpine"
     createClient.pull(image_name+":latest")
     def fin():
         createClient.remove_image(image_name+":latest")
