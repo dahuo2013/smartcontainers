@@ -23,8 +23,8 @@ def test_fileCopyIn(createClient,pull_docker_image):
     createClient.start(ContainerID)
     with open('SCProv.jsonld', 'a') as provfile:
         provfile.write('This is the data for the tar file test.')
-    createClient.fileCopyIn(ContainerID,'SCProv.jsonld','/SmartContainer/')
-    assert createClient.hasProv(ContainerID, 'SCProv.jsonld', '/SmartContainer/')
+    createClient.fileCopyIn(ContainerID,'SCProv.jsonld','/')
+    assert createClient.hasProv(ContainerID, 'SCProv.jsonld', '/SmartContainer')
     time.sleep(1)
     createClient.stop(ContainerID)
     createClient.remove_container(ContainerID)

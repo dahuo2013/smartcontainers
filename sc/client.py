@@ -1,17 +1,20 @@
 # Client.py
 
 import docker
+import glob
 import os
 import scMetadata
 import io
 import pprint
+import re
 import tempfile
 import tarfile
 import provinator
 import json
-
+import glob
 
 class scClient(docker.Client):
+
     def __init__(self, *args, **kwargs):
         super(scClient, self).__init__(*args, **kwargs)
 
@@ -86,12 +89,16 @@ class scClient(docker.Client):
     def simple_tar(self, path):
         #Creates temporary tar file from file specified in path.
         # Returns tar file.
+        # t_dir = tempfile.mkdtemp(prefix='app-')
         f = tempfile.NamedTemporaryFile()
-        t = tarfile.open(mode='w', fileobj=f)
+        tar = tarfile.open(mode='w', fileobj=f)
 
         abs_path = os.path.abspath(path)
-        t.add(abs_path, arcname=os.path.basename(path), recursive=False)
+        for filex in glob.glob(abs_path):
+            if filex:
+                archname = re.sub(abs_path,'%s/%s' % (self.provfilepath, path), filex)
+                tar.add(abs_path, arcname=archname, recursive=False)
 
-        t.close()
+        tar.close()
         f.seek(0)
         return f
