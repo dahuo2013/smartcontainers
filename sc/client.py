@@ -47,7 +47,7 @@ class scClient(docker.Client):
             self.put_label_image(thisID, newLabel, *args, **kwargs)
 
         else:
-            pass
+            super(scClient, self).commit(container, *args, **kwargs)
 
     def put_label_image(self, image, label, *args, **kwargs):
         #Write the label to the new image
