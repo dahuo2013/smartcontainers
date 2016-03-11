@@ -24,8 +24,7 @@ class scClient(docker.Client):
         self.provfilename = "SCProv.jsonld"
         self.label_prefix = "smartcontainer"
 
-    def commit(self, container, repository=None, tag=None, message=None,
-               author=None, conf=None):
+    def commit(self, container, *args, **kwargs):
         #Extends the docker-py commit command to include smartcontainer functions
         #Check if the container being committed has previous provenance information stored in it.
         if self.hasProv(container,self.provfilename,self.provfilepath):
@@ -38,23 +37,23 @@ class scClient(docker.Client):
             #Remove the local copy of the provenance file
             os.remove(self.provfilename)
             # #Commit the container changes
-            newImage = super(scClient, self).commit(container=container, repository=repository, tag=tag, message=message,
-                         author=author, conf=conf)
+            newImage = super(scClient, self).commit(container=container, *args,
+                                                    **kwargs)
             #Get the ID of the newly created image
             thisID = newImage['Id']
             #Get the label contents in dictionary form.
             newLabel = self.scmd.labelDictionary(self.label_prefix)
             #Write the label to the new image
-            self.put_label_image(thisID, newLabel, repository, tag, message, author, conf)
+            self.put_label_image(thisID, newLabel, *args, **kwargs)
 
         else:
             pass
 
-    def put_label_image(self, imageID, label, repository, tag, message, author, conf):
+    def put_label_image(self, image, label, *args, **kwargs):
         #Write the label to the new image
         #Create a new container with the label, commit it and then remove the container.
-        newContainer = super(scClient, self).create_container(image=imageID, command="/bin/bash", labels=label)
-        super(scClient, self).commit(container=newContainer,repository=repository,tag=tag, message=message, author=author, conf=conf)
+        newContainer = super(scClient, self).create_container(image=image, command="/bin/sh", labels=label)
+        super(scClient, self).commit(container=newContainer, *args, **kwargs)
         super(scClient, self).remove_container(newContainer)
 
     def fileCopyOut(self, containerid, filename, path):
