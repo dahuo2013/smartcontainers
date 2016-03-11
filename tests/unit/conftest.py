@@ -5,7 +5,7 @@ import pytest
 from sc import client
 from docker import tls
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def createClient():
     myclient = None
     # Find docker-machine environment variables
@@ -38,7 +38,7 @@ def createClient():
 # If we fall through, myclient is set to none and we should fail.
     return myclient
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pull_docker_image(request, createClient):
     image_name = "phusion/baseimage:latest"
     createClient.pull(image_name)
