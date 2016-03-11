@@ -57,3 +57,5 @@ def test_put_label_image(createClient, pull_docker_image):
     assert 'Szakonyi' in str(myInspect)
     createClient.remove_image(image_id)
 
+def test_infect_image():
+    pass
