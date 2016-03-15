@@ -8,9 +8,6 @@ python:
 services:
     - docker
 
-before_install:
-    - docker pull phusion/baseimage
-
 # command to install dependencies
 install:
     - "pip install tox-travis"
