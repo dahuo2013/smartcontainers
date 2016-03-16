@@ -96,10 +96,12 @@ def test_infect_image(createClient, pull_docker_image):
     imageID = str(createClient.inspect_image(pull_docker_image)['Id'])
     imageID = imageID.replace('sha256:', '')
     sc_image = createClient.infect_image(image=imageID)
-    
+
     # Test creation of existing smart container -- it's a twofur
     existing_sc_image = createClient.infect_image(image=sc_image)
     assert existing_sc_image == None
+    # Cleanup image after ourselves
+    createClient.remove_image(sc_image)
     # image_list = createClient.images()
     # We assume that if this operation is successful it will be on
     # top of the image list.
